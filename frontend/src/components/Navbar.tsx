@@ -48,20 +48,10 @@ export const Navbar: React.FC = () => {
           <span>MCP Protocol Active</span>
         </div>
 
-        {/* User Role Pill */}
-        <Badge variant={user?.role === 'Administrator' ? 'brand' : user?.role === 'Manager' ? 'info' : 'neutral'}>
-          {user?.role || 'Employee'}
+        {/* User Badge */}
+        <Badge variant="brand">
+          Pranay (Administrator)
         </Badge>
-
-        {/* Logout Button */}
-        <button
-          onClick={logout}
-          title="Sign Out"
-          className="flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:border-gray-700 hover:bg-gray-800 hover:text-white"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          <span>Logout</span>
-        </button>
       </div>
     </header>
   );
