@@ -2,13 +2,12 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Default to the docker-compose postgres url if not provided
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://erp_user:erp_password@localhost:15432/erp_lite"
-)
+# Default to SQLite for zero-setup local execution; use PostgreSQL if DATABASE_URL is explicitly set
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./worknex.db")
 
-engine = create_engine(DATABASE_URL)
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

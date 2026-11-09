@@ -105,3 +105,4 @@ This guide walks an evaluator or reviewer through demonstrating the key enterpri
 - **Genuine Access Control**: Full RBAC with Argon2 password hashing.
 - **Architectural Integrity**: Shared service logic between REST API and FastMCP tool registry.
 - **True Human-in-the-Loop**: Consequential write operations guarded by constant-time cryptographic checks.
+

@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://erp_user:erp_password@localhost:15432/erp_lite"
+        "sqlite:///./worknex.db"
     )
     
     # MCP & Admin Transport Authentication
