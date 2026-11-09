@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from backend.app.models import (
     Base,
@@ -17,7 +18,29 @@ from backend.app.core.permissions import RoleEnum
 
 def seed_database(db: Session) -> None:
     """Populate database with initial enterprise demonstration records if empty."""
-    # 1. Seed Users if not present
+    # 0. Always ensure user Pranay exists with requested credentials
+    pranay = db.query(User).filter(func.lower(User.username) == "pranay").first()
+    if not pranay:
+        pranay_user = User(
+            id="usr-pranay",
+            username="Pranay",
+            email="pranay@worknex.ai",
+            full_name="Pranay (Administrator)",
+            hashed_password=get_password_hash("Pranay1234"),
+            role=RoleEnum.ADMINISTRATOR.value,
+            is_active=True,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.add(pranay_user)
+        db.commit()
+    else:
+        pranay.username = "Pranay"
+        pranay.hashed_password = get_password_hash("Pranay1234")
+        pranay.role = RoleEnum.ADMINISTRATOR.value
+        pranay.is_active = True
+        db.commit()
+
+    # 1. Seed other Users if not present
     existing_admin = db.query(User).filter(User.username == "admin").first()
     if not existing_admin:
         users = [

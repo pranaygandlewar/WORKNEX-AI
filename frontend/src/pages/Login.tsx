@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Shield, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { Sparkles, Shield, Lock, User as UserIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Admin@Worknex2026!');
+  const [username, setUsername] = useState('Pranay');
+  const [password, setPassword] = useState('Pranay1234');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -16,10 +16,14 @@ export const Login: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      await login(username, password);
+      await login(username.trim(), password.trim());
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid username or password.');
+      if (!err.response) {
+        setError('Cannot reach backend on http://localhost:8000. Ensure the backend is running with "uv run python main.py server".');
+      } else {
+        setError(err.response?.data?.detail || 'Invalid credentials. Please verify username and password.');
+      }
     } finally {
       setLoading(false);
     }
@@ -28,6 +32,7 @@ export const Login: React.FC = () => {
   const setPreset = (u: string, p: string) => {
     setUsername(u);
     setPassword(p);
+    setError(null);
   };
 
   return (
@@ -46,8 +51,8 @@ export const Login: React.FC = () => {
 
         {/* Error message */}
         {error && (
-          <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+          <div className="flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
@@ -97,30 +102,31 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
-        {/* Demo Credentials Quick Switcher */}
-        <div className="rounded-xl border border-gray-800/80 bg-gray-900/40 p-4">
+        {/* Quick Credentials Switcher */}
+        <div className="rounded-xl border border-gray-800/80 bg-gray-900/40 p-4 space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            Quick Demonstration Credentials
+            Instant Login Presets
           </p>
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setPreset('admin', 'Admin@Worknex2026!')}
-              className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-2 py-1.5 text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
-            >
-              Admin
-            </button>
+          <button
+            type="button"
+            onClick={() => setPreset('Pranay', 'Pranay1234')}
+            className="w-full flex items-center justify-between rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-400 hover:bg-blue-500/20 transition-colors"
+          >
+            <span>Pranay (Administrator)</span>
+            <span className="font-mono text-[11px] text-gray-400">Pranay1234</span>
+          </button>
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
               onClick={() => setPreset('manager', 'Manager@Worknex2026!')}
-              className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-2 py-1.5 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
+              className="rounded-lg border border-gray-800 bg-gray-900/80 px-2.5 py-1.5 text-xs text-gray-300 hover:border-gray-700 hover:text-white"
             >
               Manager
             </button>
             <button
               type="button"
               onClick={() => setPreset('employee', 'Employee@Worknex2026!')}
-              className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20"
+              className="rounded-lg border border-gray-800 bg-gray-900/80 px-2.5 py-1.5 text-xs text-gray-300 hover:border-gray-700 hover:text-white"
             >
               Employee
             </button>
@@ -135,4 +141,3 @@ export const Login: React.FC = () => {
     </div>
   );
 };
-

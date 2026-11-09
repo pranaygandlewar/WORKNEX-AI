@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from backend.app.api.dependencies import get_db, get_current_user
 from backend.app.models import User
@@ -12,8 +13,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/login", response_model=TokenResponse)
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate user with username and Argon2 password hash."""
-    user = db.query(User).filter(User.username == credentials.username).first()
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    clean_username = (credentials.username or "").strip()
+    clean_password = (credentials.password or "").strip()
+    
+    user = db.query(User).filter(func.lower(User.username) == clean_username.lower()).first()
+    if not user or not verify_password(clean_password, user.hashed_password):
         record_audit(
             tool_name="user_login",
             arguments={"username": credentials.username},

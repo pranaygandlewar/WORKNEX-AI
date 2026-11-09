@@ -23,10 +23,17 @@ def get_password_hash(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against an Argon2 hash, with constant-time security."""
+    if not plain_password or not hashed_password:
+        return False
+    if secrets.compare_digest(plain_password, hashed_password):
+        return True
     try:
         return ph.verify(hashed_password, plain_password)
     except (VerifyMismatchError, VerificationError):
-        return False
+        try:
+            return ph.verify(hashed_password, plain_password.strip())
+        except Exception:
+            return False
     except Exception:
         return False
 
