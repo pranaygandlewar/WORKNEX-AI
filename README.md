@@ -40,19 +40,21 @@
 ## 🎬 Platform Walkthrough & Live Demo
 
 <div align="center">
-  <video src="https://github.com/pranaygandlewar/WORKNEX-AI/raw/main/docs/assets/Demo.mp4" controls="controls" width="100%" style="max-width: 900px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-    Your browser does not support the video tag.
-  </video>
+
+  <a href="https://github.com/pranaygandlewar/WORKNEX-AI/blob/main/Demo.mp4" title="Click to open full HD Demo video on GitHub">
+    <img src="docs/assets/demo.gif" alt="WORKNEX AI Live Platform Walkthrough" width="100%" style="max-width: 920px; border-radius: 14px; border: 1px solid #334155; box-shadow: 0 12px 36px rgba(0,0,0,0.6);" />
+  </a>
 
   <p align="center">
-    <a href="https://github.com/pranaygandlewar/WORKNEX-AI/raw/main/docs/assets/Demo.mp4">
-      <img src="https://img.shields.io/badge/▶%EF%B8%8F%20Direct%20Video%20Stream-Play%20Demo.mp4-blue?style=for-the-badge&logo=youtube&logoColor=white" alt="Play Demo Video" />
+    <a href="https://github.com/pranaygandlewar/WORKNEX-AI/blob/main/Demo.mp4">
+      <img src="https://img.shields.io/badge/▶%EF%B8%8F%20GitHub%20Video%20Player-Watch%20Demo.mp4-blue?style=for-the-badge&logo=github&logoColor=white" alt="Watch Video on GitHub" />
     </a>
-    <a href="https://raw.githubusercontent.com/pranaygandlewar/WORKNEX-AI/main/docs/assets/Demo.mp4">
-      <img src="https://img.shields.io/badge/💾%20Download%20MP4-6.9%20MB-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Demo Video" />
+    <a href="https://github.com/pranaygandlewar/WORKNEX-AI/raw/main/Demo.mp4">
+      <img src="https://img.shields.io/badge/💾%20Raw%20HD%20Stream-Download%20MP4-purple?style=for-the-badge&logo=download&logoColor=white" alt="Raw HD Stream" />
     </a>
   </p>
-  <p><sub><i>Full HD platform demonstration showcasing the AI assistant, multi-warehouse inventory tracking, procurement approvals, and real-time operations dashboard.</i></sub></p>
+  <p><sub><i>⚡ <b>Live Platform Walkthrough:</b> React 18 + Tailwind dashboard, multi-warehouse telemetry, FastMCP AI Assistant interactions, and cryptographic approval authorization in action. Click preview above to play the full HD video in GitHub's video player.</i></sub></p>
+
 </div>
 
 ---
