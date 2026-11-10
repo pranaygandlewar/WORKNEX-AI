@@ -23,6 +23,7 @@
   </p>
 
   <p align="center">
+    <a href="#-platform-walkthrough--live-demo">Demo Video</a> •
     <a href="#-quick-start">Quick Start</a> •
     <a href="#-architecture-overview">Architecture</a> •
     <a href="#-application-modules">Modules</a> •
@@ -32,6 +33,26 @@
     <a href="#-license--attribution">Attribution</a>
   </p>
 
+</div>
+
+---
+
+## 🎬 Platform Walkthrough & Live Demo
+
+<div align="center">
+  <video src="https://github.com/pranaygandlewar/WORKNEX-AI/raw/main/docs/assets/Demo.mp4" controls="controls" width="100%" style="max-width: 900px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    Your browser does not support the video tag.
+  </video>
+
+  <p align="center">
+    <a href="https://github.com/pranaygandlewar/WORKNEX-AI/raw/main/docs/assets/Demo.mp4">
+      <img src="https://img.shields.io/badge/▶%EF%B8%8F%20Direct%20Video%20Stream-Play%20Demo.mp4-blue?style=for-the-badge&logo=youtube&logoColor=white" alt="Play Demo Video" />
+    </a>
+    <a href="https://raw.githubusercontent.com/pranaygandlewar/WORKNEX-AI/main/docs/assets/Demo.mp4">
+      <img src="https://img.shields.io/badge/💾%20Download%20MP4-6.9%20MB-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Demo Video" />
+    </a>
+  </p>
+  <p><sub><i>Full HD platform demonstration showcasing the AI assistant, multi-warehouse inventory tracking, procurement approvals, and real-time operations dashboard.</i></sub></p>
 </div>
 
 ---
