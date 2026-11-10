@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from backend.app.api.dependencies import get_db, require_manager
+from backend.app.api.dependencies import get_db, require_manager, get_current_user_or_demo
 from backend.app.models import AuditLog, User
 from backend.app.schemas import AuditLogEntry
 
@@ -17,9 +17,12 @@ def get_audit_trail(
     search: Optional[str] = Query(None, description="Keyword search in arguments or result"),
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_manager)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
-    """Retrieve append-only audit trail logs (Manager/Admin only)."""
+    """Retrieve append-only audit trail logs.
+    
+    In Demo Mode, sensitive arguments and internal results are automatically sanitized.
+    """
     query = db.query(AuditLog)
     if tool_name:
         query = query.filter(AuditLog.tool_name == tool_name)
@@ -36,14 +39,17 @@ def get_audit_trail(
         )
     
     entries = query.order_by(AuditLog.timestamp.desc()).limit(limit).all()
+    
+    is_demo = current_user.role == "Demo Visitor"
+    
     return [
         AuditLogEntry(
             id=e.id,
             tool_name=e.tool_name,
-            arguments=e.arguments,
-            result=e.result,
+            arguments="[Arguments Sanitized for Demo View]" if is_demo and e.tool_name in ["user_login", "create_user", "update_user"] else e.arguments,
+            result="[Result Sanitized for Demo View]" if is_demo and e.tool_name in ["user_login", "create_user", "update_user"] else e.result,
             timestamp=e.timestamp,
-            actor=e.actor or "system",
+            actor="[Protected Identity]" if is_demo and e.actor and "admin" in e.actor.lower() else (e.actor or "system"),
             action_type=e.action_type or "MCP_TOOL",
             status=e.status or "SUCCESS"
         )

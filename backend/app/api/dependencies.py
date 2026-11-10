@@ -10,6 +10,16 @@ from backend.app.core.permissions import RoleEnum
 
 security_bearer = HTTPBearer(auto_error=False)
 
+# Dedicated read-only Demo Visitor identity
+DEMO_USER = User(
+    id="usr-demo-visitor",
+    username="demo_visitor",
+    full_name="Demo Visitor (Read-Only)",
+    email="visitor@worknex.ai",
+    role="Demo Visitor",
+    is_active=True
+)
+
 def get_db() -> Generator[Session, None, None]:
     """Provide a transactional database session."""
     db = SessionLocal()
@@ -61,6 +71,42 @@ def get_current_user(
         )
         
     return user
+
+def get_current_user_or_demo(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer),
+    x_demo_mode: Optional[str] = Header(None, alias="X-Demo-Mode"),
+    db: Session = Depends(get_db)
+) -> User:
+    """Returns authenticated user if valid token is provided.
+    
+    If credentials are provided but invalid/expired, returns 401 Unauthorized.
+    If no credentials are provided or X-Demo-Mode header is set, returns the read-only DEMO_USER.
+    """
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+        if token in ("demo", "demo-token"):
+            return DEMO_USER
+            
+        payload = decode_access_token(token)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired access token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        username: str = payload.get("sub")
+        if username:
+            user = db.query(User).filter(User.username == username).first()
+            if user and user.is_active:
+                return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # In Demo Mode or unauthenticated request to public-read endpoints
+    return DEMO_USER
 
 def require_roles(*allowed_roles: str):
     """Enforce that the authenticated user possesses one of the allowed roles."""

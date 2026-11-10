@@ -3,7 +3,7 @@ export interface User {
   username: string;
   email: string;
   full_name: string;
-  role: 'Administrator' | 'Manager' | 'Employee' | 'AI Agent';
+  role: 'Administrator' | 'Manager' | 'Employee' | 'AI Agent' | 'Demo Visitor';
   is_active: boolean;
   created_at?: string;
 }

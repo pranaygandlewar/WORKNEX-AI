@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from backend.app.api.dependencies import get_db, require_authenticated
+from backend.app.api.dependencies import get_db, get_current_user_or_demo
 from backend.app.models import User, AIConversation, AIMessage
 from backend.app.schemas import (
     AIChatRequest,
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/ai", tags=["AI Business Assistant"])
 def chat_with_assistant(
     chat_in: AIChatRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Interact with the WORKNEX AI Assistant through MCP tool orchestration."""
     service = AIAssistantService(db=db, current_user=current_user)
@@ -30,9 +30,12 @@ def chat_with_assistant(
 @router.get("/conversations", response_model=List[AIConversationResponse])
 def get_conversations(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve chat history sessions for the current user."""
+    if current_user.role == "Demo Visitor":
+        return []
+        
     convs = (
         db.query(AIConversation)
         .filter(AIConversation.user_id == current_user.id)
@@ -62,7 +65,7 @@ def get_conversations(
 def get_single_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve a single chat conversation thread with all message history."""
     c = db.query(AIConversation).filter(AIConversation.id == conversation_id).first()

@@ -25,34 +25,56 @@ MCP_TOOLS_SPEC = [
     {
         "name": "get_low_stock_items",
         "description": "Lists all inventory materials that are currently below their safety reorder point.",
+        "category": "PUBLIC_READ",
         "parameters": {}
     },
     {
         "name": "check_inventory",
         "description": "Checks current stock level, warehouse, and reorder point for a specific material ID.",
+        "category": "PUBLIC_READ",
         "parameters": {"material_id": "string"}
     },
     {
         "name": "get_open_orders",
         "description": "Retrieves active sales orders that are open or processing.",
+        "category": "PUBLIC_READ",
         "parameters": {"status": "string (default: 'open')", "limit": "integer (default: 20)"}
     },
     {
         "name": "get_pending_requisitions",
         "description": "Retrieves pending purchase requisitions awaiting manager review.",
+        "category": "PUBLIC_READ",
         "parameters": {}
     },
     {
         "name": "create_requisition",
         "description": "Proposes a new purchase requisition. Requires human-in-the-loop approval. Status will be 'pending_approval'.",
+        "category": "AUTHENTICATED_WRITE",
         "parameters": {"material_id": "string", "quantity": "integer"}
     },
     {
         "name": "get_inventory_summary",
         "description": "Provides an overview of all inventory across all warehouses.",
+        "category": "PUBLIC_READ",
         "parameters": {}
     }
 ]
+
+# Explicit Tool Access Control Classification
+PUBLIC_READ_TOOLS = {
+    "get_low_stock_items",
+    "check_inventory",
+    "get_inventory_summary",
+    "get_open_orders",
+    "get_pending_requisitions",
+}
+AUTHENTICATED_WRITE_TOOLS = {
+    "create_requisition",
+}
+ADMIN_ONLY_TOOLS = {
+    "adjust_inventory",
+    "approve_requisition",
+}
 
 class AIAssistantService:
     """Enterprise AI Business Operations Assistant.
@@ -67,6 +89,17 @@ class AIAssistantService:
 
     def execute_tool(self, tool_name: str, args: Dict[str, Any]) -> ToolExecutionInfo:
         """Execute an MCP tool with audit logging and permission boundaries."""
+        # Demo Mode boundary: only explicitly approved PUBLIC_READ tools are executable
+        if getattr(self.user, "role", "") == "Demo Visitor" and tool_name not in PUBLIC_READ_TOOLS:
+            return ToolExecutionInfo(
+                tool_name=tool_name,
+                arguments=args,
+                result={
+                    "error": "Action restricted in Demo Mode",
+                    "detail": f"Tool '{tool_name}' requires authenticated credentials. Demo Mode only allows read-only queries."
+                },
+                status="RESTRICTED"
+            )
         try:
             if tool_name == "get_low_stock_items":
                 items = list_low_stock_items(self.db)
@@ -268,27 +301,33 @@ class AIAssistantService:
 
         # 3. Create purchase requisition
         elif any(k in msg_lower for k in ["create requisition", "reorder", "replenish", "purchase requisition", "order more", "buy"]):
-            mat_match = re.search(r"\b(MAT-[A-Za-z0-9_-]+)\b", message, re.IGNORECASE)
-            qty_match = re.search(r"\b(\d+)\s*(units|pieces|items|qty)?\b", message, re.IGNORECASE)
-            
-            mat_id = mat_match.group(1).upper() if mat_match else None
-            qty = int(qty_match.group(1)) if qty_match else 100
-            
-            if mat_id:
-                tool_info = self.execute_tool("create_requisition", {"material_id": mat_id, "quantity": qty})
-                tool_executions.append(tool_info)
-                if tool_info.status == "SUCCESS":
-                    res = tool_info.result
-                    assistant_reply = (
-                        f"### 📋 Purchase Requisition Proposed\n\n"
-                        f"I have successfully created **Requisition `{res['requisition_id']}`** for **{res['quantity']} units** of `{res['material_id']}`.\n\n"
-                        f"- **Current Status:** `pending_approval`\n"
-                        f"- **Human-in-the-Loop Policy:** As an AI assistant, I cannot approve requisitions. A manager or administrator must review and approve this requisition through the Procurement Center.\n"
-                    )
-                else:
-                    assistant_reply = f"❌ Failed to create requisition: {tool_info.result.get('error', 'Unknown error')}"
+            if getattr(self.user, "role", "") == "Demo Visitor":
+                assistant_reply = (
+                    "🔒 **Demo Mode Restriction:** Proposing purchase requisitions or modifying database records is disabled in read-only Demo Mode. "
+                    "Please sign in with an authorized Employee, Manager, or Administrator account to submit purchase requisitions."
+                )
             else:
-                assistant_reply = "To create a purchase requisition, please provide the Material ID (e.g. `create requisition for MAT-002 with 150 units`)."
+                mat_match = re.search(r"\b(MAT-[A-Za-z0-9_-]+)\b", message, re.IGNORECASE)
+                qty_match = re.search(r"\b(\d+)\s*(units|pieces|items|qty)?\b", message, re.IGNORECASE)
+                
+                mat_id = mat_match.group(1).upper() if mat_match else None
+                qty = int(qty_match.group(1)) if qty_match else 100
+                
+                if mat_id:
+                    tool_info = self.execute_tool("create_requisition", {"material_id": mat_id, "quantity": qty})
+                    tool_executions.append(tool_info)
+                    if tool_info.status == "SUCCESS":
+                        res = tool_info.result
+                        assistant_reply = (
+                            f"### 📋 Purchase Requisition Proposed\n\n"
+                            f"I have successfully created **Requisition `{res['requisition_id']}`** for **{res['quantity']} units** of `{res['material_id']}`.\n\n"
+                            f"- **Current Status:** `pending_approval`\n"
+                            f"- **Human-in-the-Loop Policy:** As an AI assistant, I cannot approve requisitions. A manager or administrator must review and approve this requisition through the Procurement Center.\n"
+                        )
+                    else:
+                        assistant_reply = f"❌ Failed to create requisition: {tool_info.result.get('error', 'Unknown error')}"
+                else:
+                    assistant_reply = "To create a purchase requisition, please provide the Material ID (e.g. `create requisition for MAT-002 with 150 units`)."
 
         # 4. Open Sales Orders
         elif any(k in msg_lower for k in ["open orders", "sales orders", "sales order", "pending orders", "order summary"]):

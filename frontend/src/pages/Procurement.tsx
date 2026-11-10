@@ -17,7 +17,7 @@ import { Modal } from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 
 export const Procurement: React.FC = () => {
-  const { hasRole, user } = useAuth();
+  const { hasRole, user, isDemoMode } = useAuth();
   const [requisitions, setRequisitions] = useState<PurchaseRequisition[]>([]);
   const [materials, setMaterials] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,13 +123,19 @@ export const Procurement: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Requisition</span>
-        </button>
+        {!isDemoMode ? (
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Requisition</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <span>🔒 Creation Disabled in Demo Mode</span>
+          </div>
+        )}
       </div>
 
       {/* Human-in-the-Loop Policy Callout */}

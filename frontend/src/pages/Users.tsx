@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Users as UsersIcon, Plus, Shield, UserCheck, Key, Lock } from 'lucide-react';
+import { Users as UsersIcon, Plus, Shield, UserCheck, Key, Lock, AlertTriangle } from 'lucide-react';
 import { api } from '../services/api';
 import { User } from '../types';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export const Users: React.FC = () => {
+  const { hasRole, isDemoMode } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,10 @@ export const Users: React.FC = () => {
   });
 
   const fetchUsers = async () => {
+    if (isDemoMode || !hasRole(['Administrator'])) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await api.users.list();
@@ -33,8 +39,10 @@ export const Users: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-    api.users.getRoles().then(setRoles).catch(console.error);
-  }, []);
+    if (!isDemoMode && hasRole(['Administrator'])) {
+      api.users.getRoles().then(setRoles).catch(console.error);
+    }
+  }, [isDemoMode]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +55,20 @@ export const Users: React.FC = () => {
       alert(err.response?.data?.detail || 'Failed to register user');
     }
   };
+
+  if (isDemoMode || !hasRole(['Administrator'])) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-800 bg-[#111827]/80 p-12 text-center space-y-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <Shield className="h-7 w-7" />
+        </div>
+        <h3 className="text-base font-bold text-white">Access Restricted — Administrator Clearance Required</h3>
+        <p className="text-xs text-gray-400 max-w-md leading-relaxed">
+          User identity management, role provisioning, and password updates are guarded by strict role-based access control (RBAC). In public Demo Mode, user management is disabled to protect system credentials.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

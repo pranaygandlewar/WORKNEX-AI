@@ -15,24 +15,61 @@ import {
   SystemSettings,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? '/api/v1' : 'http://localhost:8000/api/v1');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 3000, // 3s timeout before graceful fallback
+  timeout: 5000,
 });
 
-// Intercept requests to attach Bearer token
+// Intercept requests to attach Bearer token or Demo Mode header
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('worknex_token') || 'worknex-admin-token-pranay';
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isDemo = localStorage.getItem('worknex_demo_mode') === 'true';
+  if (isDemo) {
+    if (config.headers) {
+      config.headers['X-Demo-Mode'] = 'true';
+    }
+  } else {
+    const token = localStorage.getItem('worknex_token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
+
+// Response interceptor: handle token expiration
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const isDemo = localStorage.getItem('worknex_demo_mode') === 'true';
+      if (!isDemo && !error.config?.url?.includes('/auth/login')) {
+        // Clear expired or invalid credentials
+        localStorage.removeItem('worknex_token');
+        localStorage.removeItem('worknex_user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+const checkDemoModeRestriction = (actionName = 'This operation') => {
+  if (localStorage.getItem('worknex_demo_mode') === 'true') {
+    throw new Error(
+      `Action restricted: ${actionName} is disabled in Demo Mode. Please sign in with an authorized account.`
+    );
+  }
+};
 
 // In-memory fallback state
 let fallbackInventory: InventoryItem[] = [
@@ -195,34 +232,19 @@ export const api = {
   // Auth
   auth: {
     login: async (username: string, password: string) => {
+      const res = await apiClient.post('/auth/login', { username, password });
+      return res.data;
+    },
+    logout: async () => {
       try {
-        const res = await apiClient.post('/auth/login', { username, password });
-        return res.data;
+        await apiClient.post('/auth/logout');
       } catch {
-        return {
-          access_token: 'worknex-admin-token-pranay',
-          token_type: 'bearer',
-          role: 'Administrator',
-          username: 'Pranay',
-          full_name: 'Pranay (Administrator)',
-        };
+        // Best-effort logout
       }
     },
-    logout: async () => {},
     me: async (): Promise<User> => {
-      try {
-        const res = await apiClient.get('/auth/me');
-        return res.data;
-      } catch {
-        return {
-          id: 'usr-pranay',
-          username: 'Pranay',
-          full_name: 'Pranay (Administrator)',
-          email: 'pranay@worknex.ai',
-          role: 'Administrator',
-          is_active: true,
-        };
-      }
+      const res = await apiClient.get('/auth/me');
+      return res.data;
     },
   },
 
@@ -295,10 +317,12 @@ export const api = {
       }
     },
     create: async (item: Partial<InventoryItem>): Promise<InventoryItem> => {
+      checkDemoModeRestriction('Creating inventory items');
       try {
         const res = await apiClient.post('/inventory', item);
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const newItem: InventoryItem = {
           material_id: item.material_id || `MAT-${Date.now()}`,
           description: item.description || '',
@@ -318,13 +342,15 @@ export const api = {
       change_quantity: number,
       reason: string
     ): Promise<InventoryItem> => {
+      checkDemoModeRestriction('Stock adjustment');
       try {
         const res = await apiClient.post(`/inventory/${material_id}/adjust`, {
           change_quantity,
           reason,
         });
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const idx = fallbackInventory.findIndex((i) => i.material_id === material_id);
         if (idx >= 0) {
           const current = fallbackInventory[idx];
@@ -378,10 +404,12 @@ export const api = {
       }
     },
     create: async (order: Partial<SalesOrder>): Promise<SalesOrder> => {
+      checkDemoModeRestriction('Creating sales orders');
       try {
         const res = await apiClient.post('/orders', order);
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const newOrder: SalesOrder = {
           order_id: order.order_id || `SO-${Math.floor(1000 + Math.random() * 9000)}`,
           customer_name: order.customer_name || 'Enterprise Customer',
@@ -394,10 +422,12 @@ export const api = {
       }
     },
     update: async (order_id: string, order: Partial<SalesOrder>): Promise<SalesOrder> => {
+      checkDemoModeRestriction('Updating sales orders');
       try {
         const res = await apiClient.patch(`/orders/${order_id}`, order);
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const idx = fallbackOrders.findIndex((o) => o.order_id === order_id);
         if (idx >= 0) {
           fallbackOrders[idx] = { ...fallbackOrders[idx], ...order };
@@ -423,10 +453,12 @@ export const api = {
       }
     },
     create: async (data: { material_id: string; quantity: number; notes?: string }): Promise<PurchaseRequisition> => {
+      checkDemoModeRestriction('Submitting purchase requisitions');
       try {
         const res = await apiClient.post('/requisitions', data);
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const newReq: PurchaseRequisition = {
           requisition_id: `PR-${Math.floor(2000 + Math.random() * 9000)}`,
           material_id: data.material_id,
@@ -442,10 +474,12 @@ export const api = {
       }
     },
     approve: async (requisition_id: string, approval_token?: string): Promise<PurchaseRequisition> => {
+      checkDemoModeRestriction('Approving requisitions');
       try {
         const res = await apiClient.post(`/requisitions/${requisition_id}/approve`, { approval_token });
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const idx = fallbackRequisitions.findIndex((r) => r.requisition_id === requisition_id);
         if (idx >= 0) {
           fallbackRequisitions[idx] = {
@@ -460,10 +494,12 @@ export const api = {
       }
     },
     reject: async (requisition_id: string, reason?: string): Promise<PurchaseRequisition> => {
+      checkDemoModeRestriction('Rejecting requisitions');
       try {
         const res = await apiClient.post(`/requisitions/${requisition_id}/reject`, { reason });
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         const idx = fallbackRequisitions.findIndex((r) => r.requisition_id === requisition_id);
         if (idx >= 0) {
           fallbackRequisitions[idx] = {
@@ -567,10 +603,12 @@ export const api = {
       }
     },
     create: async (userData: any): Promise<User> => {
+      checkDemoModeRestriction('User management');
       try {
         const res = await apiClient.post('/users', userData);
         return res.data;
-      } catch {
+      } catch (err: any) {
+        if (err.message?.includes('Action restricted')) throw err;
         return {
           id: `usr-${Date.now()}`,
           username: userData.username,

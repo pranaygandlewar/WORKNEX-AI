@@ -4,7 +4,8 @@ from typing import List, Optional
 
 from backend.app.api.dependencies import (
     get_db,
-    require_authenticated,
+    get_current_user,
+    get_current_user_or_demo,
     require_manager
 )
 from backend.app.models import User
@@ -29,12 +30,12 @@ router = APIRouter(prefix="/requisitions", tags=["Procurement & Approvals"])
 def get_all_requisitions(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve purchase requisitions.
     
     Security note: approval_token is only visible to Managers and Administrators.
-    For standard employees and AI agents, approval_token is masked.
+    For standard employees, AI agents, and Demo Visitors, approval_token is masked.
     """
     results = list_requisitions(db, status=status_filter)
     is_privileged = current_user.role in [RoleEnum.ADMINISTRATOR.value, RoleEnum.MANAGER.value]
@@ -51,7 +52,7 @@ def get_all_requisitions(
 def get_single_requisition(
     requisition_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Inspect a single purchase requisition."""
     try:
@@ -67,12 +68,17 @@ def get_single_requisition(
 def propose_requisition(
     req_in: RequisitionCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user)
 ):
     """Submit a new purchase requisition in pending_approval status.
     
     The approval token is generated securely on the server and NEVER returned to the applicant.
     """
+    if current_user.role == "Demo Visitor":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Creating purchase requisitions is disabled in Demo Mode. Please sign in with an employee or manager account."
+        )
     try:
         r = create_purchase_requisition(
             material_id=req_in.material_id,

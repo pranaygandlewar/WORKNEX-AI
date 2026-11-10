@@ -14,19 +14,22 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
-  const { user, hasRole } = useAuth();
+  const { user, isDemoMode, hasRole } = useAuth();
+
+  const prefix = isDemoMode ? '/demo' : '';
+  const basePath = isDemoMode ? '/demo' : '/dashboard';
 
   const navigation = [
-    { name: 'Overview', href: '/', icon: LayoutDashboard },
-    { name: 'Inventory', href: '/inventory', icon: Boxes },
-    { name: 'Sales Orders', href: '/orders', icon: ShoppingCart },
-    { name: 'Procurement', href: '/procurement', icon: FileCheck2 },
-    { name: 'AI Assistant', href: '/ai-assistant', icon: Bot, highlight: true },
-    { name: 'Audit Center', href: '/audit', icon: ShieldAlert },
-    ...(hasRole(['Administrator'])
+    { name: 'Overview', href: basePath, icon: LayoutDashboard },
+    { name: 'Inventory', href: isDemoMode ? `${prefix}/inventory` : '/inventory', icon: Boxes },
+    { name: 'Sales Orders', href: isDemoMode ? `${prefix}/orders` : '/orders', icon: ShoppingCart },
+    { name: 'Procurement', href: isDemoMode ? `${prefix}/procurement` : '/procurement', icon: FileCheck2 },
+    { name: 'AI Assistant', href: isDemoMode ? `${prefix}/ai-assistant` : '/ai-assistant', icon: Bot, highlight: true },
+    { name: 'Audit Center', href: isDemoMode ? `${prefix}/audit` : '/audit', icon: ShieldAlert },
+    ...(!isDemoMode && hasRole(['Administrator'])
       ? [{ name: 'User Management', href: '/users', icon: Users }]
       : []),
-    { name: 'System Settings', href: '/settings', icon: Settings },
+    { name: 'System Settings', href: isDemoMode ? `${prefix}/settings` : '/settings', icon: Settings },
   ];
 
   return (

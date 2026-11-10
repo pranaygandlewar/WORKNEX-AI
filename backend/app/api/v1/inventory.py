@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from backend.app.api.dependencies import (
     get_db,
-    require_authenticated,
+    get_current_user_or_demo,
     require_manager
 )
 from backend.app.models import User
@@ -35,7 +35,7 @@ def get_inventory_list(
     search: Optional[str] = Query(None, description="Search by material ID or description"),
     category: Optional[str] = Query(None, description="Filter by category"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """List all inventory items with optional search and warehouse filters."""
     return list_all_inventory(db=db, warehouse=warehouse, search=search, category=category)
@@ -43,7 +43,7 @@ def get_inventory_list(
 @router.get("/low-stock", response_model=List[InventoryCheckResponse])
 def get_low_stock(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve all materials where quantity_on_hand is strictly below reorder_point."""
     return list_low_stock_items(db)
@@ -53,7 +53,7 @@ def get_movements(
     material_id: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve historical inventory movements for traceability."""
     return get_inventory_movements(db=db, material_id=material_id, limit=limit)
@@ -61,7 +61,7 @@ def get_movements(
 @router.get("/warehouses", response_model=List[WarehouseResponse])
 def get_warehouses(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """List all warehouse facilities."""
     return list_warehouses(db)
@@ -70,7 +70,7 @@ def get_warehouses(
 def get_material(
     material_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Inspect inventory levels for a specific material."""
     try:

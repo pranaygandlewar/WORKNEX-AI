@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime, timezone
 
-from backend.app.api.dependencies import get_db, require_authenticated
+from backend.app.api.dependencies import get_db, get_current_user_or_demo
 from backend.app.models import User
 from backend.app.core.config import settings
 from backend.app.core.permissions import RoleEnum
@@ -30,7 +30,7 @@ def get_health(db: Session = Depends(get_db)):
     )
 
 @router.get("/settings", response_model=SystemSettingsResponse)
-def get_settings(current_user: User = Depends(require_authenticated)):
+def get_settings(current_user: User = Depends(get_current_user_or_demo)):
     """Retrieve system configuration metadata (no secrets exposed!)."""
     return SystemSettingsResponse(
         project_name=settings.PROJECT_NAME,

@@ -17,11 +17,13 @@ import { Badge } from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
 
 export const AIAssistant: React.FC = () => {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const { user, isDemoMode } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       role: 'assistant',
-      content: `👋 Hello ${user?.full_name || user?.username}! I am **WORKNEX AI**, your enterprise operations assistant.\n\nI have real-time access to the Model Context Protocol (MCP) tool registry. You can ask me to inspect inventory, summarize sales orders, identify low stock, or propose replenishment purchase requisitions.\n\n*Notice: Consequential actions (such as purchase requisitions) will be placed in 'pending_approval' and require human managerial verification.*`,
+      content: isDemoMode
+        ? `👋 Hello Demo Visitor! Welcome to **WORKNEX AI** in public read-only Demo Mode.\n\nI have real-time access to the Model Context Protocol (MCP) tool registry for **PUBLIC_READ** tools. You can ask me to inspect inventory, summarize sales orders, identify low stock, or report warehouse distribution.\n\n*Notice: Proposing new requisitions or performing stock updates is restricted in Demo Mode.*`
+        : `👋 Hello ${user?.full_name || user?.username}! I am **WORKNEX AI**, your enterprise operations assistant.\n\nI have real-time access to the Model Context Protocol (MCP) tool registry. You can ask me to inspect inventory, summarize sales orders, identify low stock, or propose replenishment purchase requisitions.\n\n*Notice: Consequential actions (such as purchase requisitions) will be placed in 'pending_approval' and require human managerial verification.*`,
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -38,13 +40,21 @@ export const AIAssistant: React.FC = () => {
     scrollToBottom();
   }, [messages, loading]);
 
-  const quickPrompts = [
-    'Show all low-stock products.',
-    'Which warehouse has the lowest inventory?',
-    'Summarize open sales orders.',
-    'Show pending purchase requisitions.',
-    'Create a purchase requisition for MAT-002 with 100 units.',
-  ];
+  const quickPrompts = isDemoMode
+    ? [
+        'Show all low-stock products.',
+        'Which warehouse has the lowest inventory?',
+        'Summarize open sales orders.',
+        'Show pending purchase requisitions.',
+        'Check inventory for MAT-001.',
+      ]
+    : [
+        'Show all low-stock products.',
+        'Which warehouse has the lowest inventory?',
+        'Summarize open sales orders.',
+        'Show pending purchase requisitions.',
+        'Create a purchase requisition for MAT-002 with 100 units.',
+      ];
 
   const handleSend = async (messageText: string) => {
     const textToSend = messageText.trim();

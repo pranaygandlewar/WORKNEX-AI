@@ -310,3 +310,97 @@ def test_audit_log_records_events_and_redacts():
     for log in logs:
         assert "AdminPass123!" not in log["arguments"]
         assert "ManagerPass123!" not in log["arguments"]
+
+# -------------------------------------------------------------
+# 7. DEMO MODE & PUBLIC READ-ONLY BOUNDARY TESTS
+# -------------------------------------------------------------
+
+def test_demo_mode_public_read_allowed():
+    """Anonymous visitors can access approved read-only endpoints without credentials."""
+    # Overview
+    r_overview = client.get("/api/v1/dashboard/overview")
+    assert r_overview.status_code == 200
+    assert "total_sales_orders" in r_overview.json()
+
+    # Inventory read-only
+    r_inv = client.get("/api/v1/inventory")
+    assert r_inv.status_code == 200
+    assert len(r_inv.json()) >= 1
+
+    # Orders read-only
+    r_orders = client.get("/api/v1/orders")
+    assert r_orders.status_code == 200
+
+    # Requisitions read-only, but approval token is strictly masked
+    r_reqs = client.get("/api/v1/requisitions")
+    assert r_reqs.status_code == 200
+    for req in r_reqs.json():
+        assert req["approval_token"] is None
+
+    # Audit trail read-only (sanitized)
+    r_audit = client.get("/api/v1/audit")
+    assert r_audit.status_code == 200
+
+def test_demo_mode_write_actions_strictly_rejected():
+    """Anonymous visitors must be rejected from all write and administrative actions."""
+    # Cannot create inventory item
+    r_create_item = client.post(
+        "/api/v1/inventory",
+        json={"material_id": "MAT-999", "description": "Hacked", "quantity_on_hand": 10, "reorder_point": 5, "warehouse": "WH-North"}
+    )
+    assert r_create_item.status_code in (401, 403)
+
+    # Cannot adjust stock
+    r_adjust = client.post(
+        "/api/v1/inventory/MAT-101/adjust",
+        json={"change_quantity": 50, "reason": "Unauthorized adjustment"}
+    )
+    assert r_adjust.status_code in (401, 403)
+
+    # Cannot create sales order
+    r_order = client.post(
+        "/api/v1/orders",
+        json={"customer_name": "Unauthorized Client", "status": "open", "total_value": 1000}
+    )
+    assert r_order.status_code in (401, 403)
+
+    # Cannot propose requisition
+    r_req = client.post(
+        "/api/v1/requisitions",
+        json={"material_id": "MAT-101", "quantity": 50, "notes": "Unauthorized requisition"}
+    )
+    assert r_req.status_code in (401, 403)
+
+    # Cannot view user management
+    r_users = client.get("/api/v1/users")
+    assert r_users.status_code in (401, 403)
+
+def test_demo_mode_ai_assistant_enforces_read_only():
+    """AI Assistant permits PUBLIC_READ tools but blocks AUTHENTICATED_WRITE tools for Demo visitors."""
+    # 1. Read-only tool is permitted
+    r_read = client.post(
+        "/api/v1/ai/chat",
+        json={"message": "Show low stock materials"}
+    )
+    assert r_read.status_code == 200
+    data_read = r_read.json()
+    assert "MAT-101" in data_read["response"]
+    assert len(data_read["tool_executions"]) >= 1
+    assert data_read["tool_executions"][0]["status"] == "SUCCESS"
+
+    # 2. Write tool is restricted
+    r_write = client.post(
+        "/api/v1/ai/chat",
+        json={"message": "Create requisition for MAT-101 with 50 units"}
+    )
+    assert r_write.status_code == 200
+    data_write = r_write.json()
+    assert "Demo Mode Restriction" in data_write["response"]
+
+def test_invalid_token_returns_401():
+    """Invalid credentials return 401 Unauthorized instead of silently falling back."""
+    r = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": "Bearer totally-invalid-token"}
+    )
+    assert r.status_code == 401

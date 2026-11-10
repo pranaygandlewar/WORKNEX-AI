@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from backend.app.api.dependencies import (
     get_db,
-    require_authenticated,
+    get_current_user_or_demo,
     require_manager
 )
 from backend.app.models import User
@@ -24,7 +24,7 @@ def get_orders(
     search: Optional[str] = Query(None, description="Search by order ID or customer name"),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve list of sales orders with filtering."""
     return list_sales_orders(db=db, status=status_filter, search=search, limit=limit)
@@ -33,7 +33,7 @@ def get_orders(
 def get_single_order(
     order_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Inspect single order details."""
     try:

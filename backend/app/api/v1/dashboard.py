@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 
-from backend.app.api.dependencies import get_db, require_authenticated
+from backend.app.api.dependencies import get_db, get_current_user_or_demo
 from backend.app.models import User
 from backend.app.schemas import DashboardOverview
 from backend.app.services.dashboard_service import get_dashboard_overview
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 @router.get("/overview", response_model=DashboardOverview)
 def get_overview(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve top-level KPI overview, charts, and activity summaries."""
     return get_dashboard_overview(db)
@@ -20,7 +20,7 @@ def get_overview(
 @router.get("/analytics")
 def get_analytics(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Operational analytics for order velocity, stock levels, and procurement bottlenecks."""
     overview = get_dashboard_overview(db)
@@ -37,7 +37,7 @@ def get_analytics(
 @router.get("/activity")
 def get_activity(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_authenticated)
+    current_user: User = Depends(get_current_user_or_demo)
 ):
     """Retrieve recent business activities and audit trail highlights."""
     overview = get_dashboard_overview(db)
