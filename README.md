@@ -226,3 +226,5 @@ WORKNEX AI is an extension built upon the foundational work of the **ERP-lite MC
 ## License
 
 This project is licensed under the terms of the **MIT License**. See the [LICENSE](LICENSE) file for complete details.
+#   W O R K N E X - A I  
+ 
