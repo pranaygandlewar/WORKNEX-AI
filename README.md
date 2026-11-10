@@ -202,7 +202,7 @@ npm run dev
 
 ---
 
-## 🔑 Demonstration Accounts
+<!-- ## 🔑 Demonstration Accounts
 
 The database comes pre-seeded with enterprise accounts spanning the entire RBAC permission matrix:
 
@@ -215,7 +215,7 @@ The database comes pre-seeded with enterprise accounts spanning the entire RBAC 
 
 > **Note:** User identification is case-insensitive (e.g., `Pranay`, `pranay`, `PRANAY`).
 
----
+--- -->
 
 ## 📦 Application Modules
 
